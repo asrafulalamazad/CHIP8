@@ -51,11 +51,11 @@ int main(int argc, char const *argv[]){
 	}
 	auto vm = std::make_unique<Chip8>();
 	vm->Reset();
-	if(!vm->ReadMemoryImage(argv[1])){
+	if( vm->ReadMemoryImage(argv[1])){
 		puts("Faild to read RAM images");
 		return 2;
 	}
-	
+
 	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_EVENTS ) != 0){
 		puts("SDL Falids");
 		return 3;
@@ -75,6 +75,10 @@ int main(int argc, char const *argv[]){
 	}
 
 	SDL_Surface *surface = SDL_GetWindowSurface(win);
+
+
+
+
 	uint8_t *px = (uint8_t *)surface->pixels;
 	px[ 256 * surface->pitch + 512 * 4] = 0xff;
 	SDL_Event e;
