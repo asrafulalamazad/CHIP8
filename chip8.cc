@@ -76,9 +76,6 @@ int main(int argc, char const *argv[]){
 
 	SDL_Surface *surface = SDL_GetWindowSurface(win);
 
-
-
-
 	uint8_t *px = (uint8_t *)surface->pixels;
 	px[ 256 * surface->pitch + 512 * 4] = 0xff;
 	SDL_Event e;
