@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_thread.h>
 #undef main
 
 const int PIXEL_SIZE = 16; //PIXELS
@@ -13,13 +14,14 @@ class Chip8{
 		// Chip8();
 		bool ReadMemoryImage(const char *fname);
 		void Reset();
+		void MainLoop();
 		uint8_t mem[4096]{};
 		uint8_t v[16]{};
 		uint16_t i{};
 		uint16_t pc{};
+		SDL_atomic_t the_end;
 };
 
-//dev.krzaq.cc
 struct FileDeler{
 	void operator()(FILE *ptr) const{
 		fclose(ptr);
@@ -37,11 +39,27 @@ bool Chip8::ReadMemoryImage(const char *fname){
 
 void Chip8::Reset(){
 	memset(mem,0,sizeof(mem));
-	pc = 0x512;
+	pc = 0x200;
 	for (size_t i = 0; i < 16; i++) {
 		v[i] = 0;
 	}
 	this->i = 0;
+}
+
+void Chip8::MainLoop(){
+	for(;;){
+		if(SDL_AtomicGet(&the_end) != 0){
+			break;
+		}
+		SDL_Delay(1);
+	}
+}
+
+int VMThreaddunc(void *vm_obj){
+	Chip8 *vm = (Chip8*)vm_obj;
+	vm->MainLoop();
+	return 0;
+
 }
 
 int main(int argc, char const *argv[]){
@@ -76,6 +94,8 @@ int main(int argc, char const *argv[]){
 
 	SDL_Surface *surface = SDL_GetWindowSurface(win);
 
+	SDL_Thread *threadID = SDL_CreateThread(VMThreaddunc,"VM Thread",vm.get());
+
 	uint8_t *px = (uint8_t *)surface->pixels;
 	px[ 256 * surface->pitch + 512 * 4] = 0xff;
 	SDL_Event e;
@@ -89,6 +109,9 @@ int main(int argc, char const *argv[]){
 		}
 		SDL_UpdateWindowSurface(win);
 	}
+
+	SDL_AtomicSet(&vm->the_end,1);
+	SDL_WaitThread(threadID,nullptr);
 
 	SDL_DestroyRenderer(ren);
 	SDL_DestroyWindow(win);
